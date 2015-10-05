@@ -123,9 +123,10 @@ public class CredentialValidation {
     public static boolean validTOTP(RealmModel realm, UserModel user, String otp) {
         UserCredentialValueModel passwordCred = null;
         OTPPolicy policy = realm.getOTPPolicy();
-        TimeBasedOTP validator = new TimeBasedOTP(policy.getAlgorithm(), policy.getDigits(), policy.getPeriod(), policy.getLookAheadWindow());
+        //TimeBasedOTP validator = new TimeBasedOTP(policy.getAlgorithm(), policy.getDigits(), policy.getPeriod(), policy.getLookAheadWindow());
         for (UserCredentialValueModel cred : user.getCredentialsDirectly()) {
             if (cred.getType().equals(UserCredentialModel.TOTP)) {
+                TimeBasedOTP validator = new TimeBasedOTP(cred.getAlgorithm(), cred.getDigits(), cred.getPeriod(), policy.getLookAheadWindow());
                 if (validator.validateTOTP(otp, cred.getValue().getBytes())) {
                     return true;
                 }

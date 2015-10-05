@@ -4,12 +4,14 @@ import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import java.math.BigInteger;
 import java.util.Random;
+import java.util.regex.Pattern;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
 public class HmacOTP {
+
     public static final String HMAC_SHA1 = "HmacSHA1";
     public static final String HMAC_SHA256 = "HmacSHA256";
     public static final String HMAC_SHA512 = "HmacSHA512";
@@ -17,6 +19,10 @@ public class HmacOTP {
     public static final int DEFAULT_NUMBER_DIGITS = 6;
     // 0 1 2 3 4 5 6 7 8
     private static final int[] DIGITS_POWER = {1, 10, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000};
+
+    /* Matches a hex string pattern.*/
+    private static final Pattern HEX_STRING = Pattern.compile("\\p{XDigit}+");
+
     protected final String algorithm;
     protected final int numberDigits;
     protected final int lookAheadWindow;
@@ -77,12 +83,8 @@ public class HmacOTP {
      * @param returnDigits number of digits to return
      * @param crypto       the crypto function to use
      * @return A numeric String in base 10 that includes return digits
-     * @throws java.security.GeneralSecurityException
-     *
      */
     public String generateOTP(String key, String counter, int returnDigits, String crypto) {
-        String result = null;
-        byte[] hash;
 
         // Using the counter
         // First 8 bytes are for the movingFactor
@@ -93,11 +95,9 @@ public class HmacOTP {
         // Get the HEX in a Byte[]
         byte[] msg = hexStr2Bytes(counter);
 
-        // Adding one byte to get the right conversion
-        // byte[] k = hexStr2Bytes(key);
-        byte[] k = key.getBytes();
+        byte[] k = getKeyBytes(key);
 
-        hash = hmac_sha1(crypto, k, msg);
+        byte[] hash = hmac_sha1(crypto, k, msg);
 
         // put selected bytes into result int
         int offset = hash[hash.length - 1] & 0xf;
@@ -107,12 +107,32 @@ public class HmacOTP {
 
         int otp = binary % DIGITS_POWER[returnDigits];
 
-        result = Integer.toString(otp);
+        String result = Integer.toString(otp);
 
         while (result.length() < returnDigits) {
             result = "0" + result;
         }
         return result;
+    }
+
+    /**
+     * Returns the byte representation for the given key String.
+     * 
+     * Google Authenticator / FreeOTP use a Base32 representation and can use the direct bytes of the input String.
+     * Other token generators (HW tokens like OTP c200) use a Base16 representation that needs to be converted via {@link #hexStr2Bytes(String)}.
+     * 
+     * @param key the key input
+     * @return A byte array
+     */
+    private byte[] getKeyBytes(String key) {
+
+        if (HEX_STRING.matcher(key).matches()){
+            //Needed for some HW token generators like OTP C200
+            return hexStr2Bytes(key);
+        }
+
+        //Needed by google authenticator / FreeOTP
+        return key.getBytes();
     }
 
     /**
@@ -122,13 +142,9 @@ public class HmacOTP {
      * @param crypto   the crypto algorithm (HmacSHA1, HmacSHA256, HmacSHA512)
      * @param keyBytes the bytes to use for the HMAC key
      * @param text     the message or text to be authenticated.
-     * @throws java.security.NoSuchAlgorithmException
-     *
-     * @throws java.security.InvalidKeyException
-     *
+     * @throws RuntimeException
      */
     private byte[] hmac_sha1(String crypto, byte[] keyBytes, byte[] text) {
-        byte[] value;
 
         try {
             Mac hmac = Mac.getInstance(crypto);
@@ -136,12 +152,10 @@ public class HmacOTP {
 
             hmac.init(macKey);
 
-            value = hmac.doFinal(text);
+            return hmac.doFinal(text);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-
-        return value;
     }
 
     /**
@@ -153,12 +167,15 @@ public class HmacOTP {
     private byte[] hexStr2Bytes(String hex) {
         // Adding one byte to get the right conversion
         // values starting with "0" can be converted
+
         byte[] bArray = new BigInteger("10" + hex, 16).toByteArray();
 
         // Copy all the REAL bytes, not the "first"
         byte[] ret = new byte[bArray.length - 1];
-        for (int i = 0; i < ret.length; i++)
+        for (int i = 0; i < ret.length; i++) {
             ret[i] = bArray[i + 1];
+        }
+
         return ret;
     }
 }
