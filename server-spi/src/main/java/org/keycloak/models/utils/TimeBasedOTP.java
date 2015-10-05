@@ -60,8 +60,9 @@ public class TimeBasedOTP extends HmacOTP {
         String steps = Long.toHexString(T).toUpperCase();
 
         // Just get a 16 digit string
-        while (steps.length() < 16)
+        while (steps.length() < 16) {
             steps = "0" + steps;
+        }
 
         return generateOTP(secretKey, steps, this.numberDigits, this.algorithm);
     }
@@ -80,8 +81,9 @@ public class TimeBasedOTP extends HmacOTP {
             String steps = Long.toHexString(currentInterval - i).toUpperCase();
 
             // Just get a 16 digit string
-            while (steps.length() < 16)
+            while (steps.length() < 16) {
                 steps = "0" + steps;
+            }
 
             String candidate = generateOTP(new String(secret), steps, this.numberDigits, this.algorithm);
 
