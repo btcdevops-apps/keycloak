@@ -80,14 +80,16 @@ public class EmailCodeAuthenticator implements Authenticator {
         LoginFormsProvider forms = context.form();
         if (error != null) forms.setError(error);
 
-        String code = Integer.toHexString((int)((2 << 24) * Math.random()));
+        String code = Integer.toHexString((int) ((2 << 24) * Math.random()));
 
         context.getUser().updateCredential(UserCredentialModel.code(code));
 
         //TODO send mail asynchronous
         EmailSenderProvider emailProvider = context.getSession().getProvider(EmailSenderProvider.class);
         try {
-            emailProvider.send(context.getRealm(), context.getUser(), "Code","Generated code: " + code,"Generated code: " + code);
+
+            //TODO use an email template
+            emailProvider.send(context.getRealm(), context.getUser(), "Login Code", "Generated code: " + code, "Generated code: " + code);
         } catch (EmailException e) {
             forms.setError(e.getMessage());
         }
