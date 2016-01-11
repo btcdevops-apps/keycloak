@@ -58,6 +58,8 @@ public class Messages {
 
     public static final String INVALID_TOTP = "invalidTotpMessage";
 
+    public static final String INVALID_CODE = "invalidCodeMessage";
+
     public static final String USERNAME_EXISTS = "usernameExistsMessage";
     public static final String RECAPTCHA_FAILED = "recaptchaFailed";
     public static final String RECAPTCHA_NOT_CONFIGURED = "recaptchaNotConfigured";
@@ -148,8 +150,6 @@ public class Messages {
     public static final String INVALID_ACCESS_CODE = "invalidAccessCodeMessage";
 
     public static final String SESSION_NOT_ACTIVE = "sessionNotActiveMessage";
-
-    public static final String INVALID_CODE = "invalidCodeMessage";
 
     public static final String IDENTITY_PROVIDER_UNEXPECTED_ERROR = "identityProviderUnexpectedErrorMessage";
 

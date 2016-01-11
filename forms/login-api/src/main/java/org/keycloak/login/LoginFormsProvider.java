@@ -47,6 +47,8 @@ public interface LoginFormsProvider extends Provider {
 
     public Response createLoginTotp();
 
+    Response createLoginViaEmailCode();
+
     public Response createRegistration();
 
     public Response createInfoPage();

@@ -147,7 +147,15 @@ public class CredentialValidation {
             }
         }
         return false;
+    }
 
+    public static boolean validCode(RealmModel realm, UserModel user, String code) {
+        for (UserCredentialValueModel cred : user.getCredentialsDirectly()) {
+            if (cred.getType().equals(UserCredentialModel.CODE)) {
+                if (cred.getValue().equals(code)) return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -199,6 +207,10 @@ public class CredentialValidation {
             }
         } else if (credential.getType().equals(UserCredentialModel.SECRET)) {
             if (!validSecret(realm, user, credential.getValue())) {
+                return false;
+            }
+        } else if (credential.getType().equals(UserCredentialModel.CODE)) {
+            if (!validCode(realm, user, credential.getValue())) {
                 return false;
             }
         } else {

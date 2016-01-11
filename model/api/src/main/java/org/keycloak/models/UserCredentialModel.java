@@ -17,6 +17,7 @@ public class UserCredentialModel {
     public static final String HOTP = "hotp";
     public static final String CLIENT_CERT = "cert";
     public static final String KERBEROS = "kerberos";
+    public static final String CODE = "code";
 
     protected String type;
     protected String value;
@@ -24,6 +25,13 @@ public class UserCredentialModel {
     protected String algorithm;
 
     public UserCredentialModel() {
+    }
+
+    public static UserCredentialModel code(String code){
+        UserCredentialModel model = new UserCredentialModel();
+        model.setType(CODE);
+        model.setValue(code);
+        return model;
     }
 
     public static UserCredentialModel password(String password) {
