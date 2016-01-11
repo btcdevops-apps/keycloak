@@ -95,8 +95,9 @@ public class EmailCodeAuthenticator implements Authenticator {
 
     @Override
     public boolean configuredFor(KeycloakSession session, RealmModel realm, UserModel user) {
-        //return session.users().configuredForCredentialType(realm.getOTPPolicy().getType(), realm, user);
-        return true;
+
+        //this is always configured if the user has a verified email address.
+        return user.isEmailVerified();
     }
 
     @Override
