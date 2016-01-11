@@ -20,7 +20,9 @@ import java.util.LinkedList;
 import java.util.List;
 
 /**
- * Created by tom on 11.01.16.
+ * An {@link Authenticator} that can validate a code sent via email.
+ *
+ * @author <a href="mailto:thomas.darimont@gmail.com">Thomas Darimont</a>
  */
 public class EmailCodeAuthenticator implements Authenticator {
 

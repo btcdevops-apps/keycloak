@@ -12,9 +12,17 @@ import org.keycloak.provider.ProviderConfigProperty;
 import java.util.List;
 
 /**
- * Created by tom on 11.01.16.
+ * An {@link AuthenticatorFactory} for creating {@link EmailCodeAuthenticator}s.
+ *
+ * @author <a href="mailto:thomas.darimont@gmail.com">Thomas Darimont</a>
  */
 public class EmailCodeAuthenticatorFactory implements AuthenticatorFactory {
+
+
+    public static final AuthenticationExecutionModel.Requirement[] REQUIREMENT_CHOICES = {
+            AuthenticationExecutionModel.Requirement.REQUIRED,
+            AuthenticationExecutionModel.Requirement.OPTIONAL,
+            AuthenticationExecutionModel.Requirement.DISABLED};
 
     public static final String PROVIDER_ID = "auth-email-code-form";
     public static final EmailCodeAuthenticator SINGLETON = new EmailCodeAuthenticator();
@@ -58,11 +66,6 @@ public class EmailCodeAuthenticatorFactory implements AuthenticatorFactory {
     public boolean isUserSetupAllowed() {
         return true;
     }
-
-    public static final AuthenticationExecutionModel.Requirement[] REQUIREMENT_CHOICES = {
-            AuthenticationExecutionModel.Requirement.REQUIRED,
-            AuthenticationExecutionModel.Requirement.OPTIONAL,
-            AuthenticationExecutionModel.Requirement.DISABLED};
 
     @Override
     public AuthenticationExecutionModel.Requirement[] getRequirementChoices() {
