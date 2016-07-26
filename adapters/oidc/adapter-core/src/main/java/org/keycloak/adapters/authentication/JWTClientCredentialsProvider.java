@@ -23,6 +23,7 @@ import java.util.Map;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.adapters.AdapterUtils;
 import org.keycloak.adapters.KeycloakDeployment;
+import org.keycloak.jose.jws.Algorithm;
 import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.common.util.KeystoreUtil;
@@ -111,17 +112,21 @@ public class JWTClientCredentialsProvider implements ClientCredentialsProvider {
 
     @Override
     public void setClientCredentials(KeycloakDeployment deployment, Map<String, String> requestHeaders, Map<String, String> formParams) {
-        String signedToken = createSignedRequestToken(deployment.getResourceName(), deployment.getRealmInfoUrl());
+        String signedToken = createSignedRequestToken(deployment.getResourceName(), deployment.getRealmInfoUrl(), deployment.getSignatureAlgorithm());
 
         formParams.put(OAuth2Constants.CLIENT_ASSERTION_TYPE, OAuth2Constants.CLIENT_ASSERTION_TYPE_JWT);
         formParams.put(OAuth2Constants.CLIENT_ASSERTION, signedToken);
     }
 
-    public String createSignedRequestToken(String clientId, String realmInfoUrl) {
+    public String createSignedRequestToken(String clientId, String realmInfoUrl, Algorithm signatureAlgorithm){
         JsonWebToken jwt = createRequestToken(clientId, realmInfoUrl);
         return new JWSBuilder()
                 .jsonContent(jwt)
-                .rsa256(privateKey);
+                .sign(signatureAlgorithm, privateKey);
+    }
+
+    public String createSignedRequestToken(String clientId, String realmInfoUrl) {
+        return createSignedRequestToken(clientId, realmInfoUrl, Algorithm.RS256);
     }
 
     protected JsonWebToken createRequestToken(String clientId, String realmInfoUrl) {

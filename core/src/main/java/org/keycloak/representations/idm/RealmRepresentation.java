@@ -18,6 +18,7 @@
 package org.keycloak.representations.idm;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import org.keycloak.jose.jws.Algorithm;
 
 import java.util.*;
 
@@ -70,6 +71,7 @@ public class RealmRepresentation {
     protected String publicKey;
     protected String certificate;
     protected String codeSecret;
+    protected Algorithm signatureAlgorithm;
     protected RolesRepresentation roles;
     protected List<GroupRepresentation> groups;
     protected List<String> defaultRoles;
@@ -367,6 +369,14 @@ public class RealmRepresentation {
 
     public void setCodeSecret(String codeSecret) {
         this.codeSecret = codeSecret;
+    }
+
+    public Algorithm getSignatureAlgorithm() {
+        return signatureAlgorithm;
+    }
+
+    public void setSignatureAlgorithm(Algorithm signatureAlgorithm) {
+        this.signatureAlgorithm = signatureAlgorithm;
     }
 
     public Boolean isPasswordCredentialGrantAllowed() {

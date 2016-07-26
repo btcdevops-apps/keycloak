@@ -18,6 +18,7 @@
 package org.keycloak.models.cache.infinispan.entities;
 
 import org.keycloak.common.enums.SslRequired;
+import org.keycloak.jose.jws.Algorithm;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.AuthenticatorConfigModel;
@@ -102,6 +103,7 @@ public class CachedRealm extends AbstractRevisioned {
     protected transient X509Certificate certificate;
     protected String certificatePem;
     protected String codeSecret;
+    protected Algorithm signatureAlgorithm;
 
     protected String loginTheme;
     protected String accountTheme;
@@ -200,6 +202,7 @@ public class CachedRealm extends AbstractRevisioned {
         certificatePem = model.getCertificatePem();
         certificate = model.getCertificate();
         codeSecret = model.getCodeSecret();
+        signatureAlgorithm = model.getSignatureAlgorithm();
 
         loginTheme = model.getLoginTheme();
         accountTheme = model.getAccountTheme();
@@ -416,6 +419,10 @@ public class CachedRealm extends AbstractRevisioned {
 
     public String getCodeSecret() {
         return codeSecret;
+    }
+
+    public Algorithm getSignatureAlgorithm() {
+        return signatureAlgorithm;
     }
 
     public List<RequiredCredentialModel> getRequiredCredentials() {

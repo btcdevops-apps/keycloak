@@ -315,7 +315,7 @@ public class AuthenticationManager {
     protected static String encodeToken(RealmModel realm, Object token) {
         String encodedToken = new JWSBuilder()
                 .jsonContent(token)
-                .rsa256(realm.getPrivateKey());
+                .sign(realm.getSignatureAlgorithm(), realm.getPrivateKey());
         return encodedToken;
     }
 

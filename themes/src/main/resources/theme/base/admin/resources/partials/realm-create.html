@@ -25,6 +25,19 @@
                     <input class="form-control" type="text" id="name" name="name" data-ng-model="realm.realm" autofocusrequired>
                 </div>
             </div>
+
+            <div class="form-group">
+                <label for="signatureAlgorithm" class="col-sm-2 control-label">{{:: 'signature-algorithm' | translate}} <span class="required">*</span></label>
+
+                <div class="col-md-6">
+                    <select class="form-control" id="signatureAlgorithm"
+                            ng-model="realm.signatureAlgorithm"
+                            ng-options="algo as algo for algo in serverInfo.enums.algorithm | filter: '!none'" autofocusrequired>
+                    </select>
+                </div>
+                <kc-tooltip>{{ 'signature-algorithm.tooltip' | translate}}</kc-tooltip>
+            </div>
+
             <div class="form-group">
                 <label for="enabled" class="col-sm-2 control-label">{{:: 'enabled' | translate}}</label>
                 <div class="col-md-6">

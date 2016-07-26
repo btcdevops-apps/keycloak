@@ -428,6 +428,8 @@ public class RealmManager implements RealmImporter {
 
         setupRealmDefaults(realm);
 
+        realm.setSignatureAlgorithm(rep.getSignatureAlgorithm());
+
         boolean postponeMasterClientSetup = postponeMasterClientSetup(rep);
         if (!postponeMasterClientSetup) {
             setupMasterAdminManagement(realm);

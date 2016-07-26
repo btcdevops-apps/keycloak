@@ -23,6 +23,7 @@ import com.mongodb.QueryBuilder;
 import org.keycloak.connections.mongo.api.context.MongoStoreInvocationContext;
 import org.keycloak.common.enums.SslRequired;
 import org.keycloak.jose.jwk.JWKBuilder;
+import org.keycloak.jose.jws.Algorithm;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.AuthenticatorConfigModel;
@@ -497,9 +498,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
     @Override
     public void setCertificatePem(String certificate) {
         realm.setCertificatePem(certificate);
-
     }
-
 
     @Override
     public String getPrivateKeyPem() {
@@ -557,6 +556,17 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
     @Override
     public void setCodeSecret(String codeSecret) {
         realm.setCodeSecret(codeSecret);
+        updateRealm();
+    }
+
+    @Override
+    public Algorithm getSignatureAlgorithm() {
+        return Algorithm.valueOf(realm.getSignatureAlgorithm());
+    }
+
+    @Override
+    public void setSignatureAlgorithm(Algorithm algorithm) {
+        realm.setSignatureAlgorithm(algorithm.name());
         updateRealm();
     }
 

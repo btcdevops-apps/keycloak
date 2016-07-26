@@ -21,6 +21,7 @@ import org.jboss.logging.Logger;
 import org.keycloak.connections.jpa.util.JpaUtils;
 import org.keycloak.common.enums.SslRequired;
 import org.keycloak.jose.jwk.JWKBuilder;
+import org.keycloak.jose.jws.Algorithm;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.AuthenticatorConfigModel;
@@ -491,7 +492,17 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
         this.certificate = certificate;
         String certificatePem = KeycloakModelUtils.getPemFromCertificate(certificate);
         setCertificatePem(certificatePem);
+    }
 
+    @Override
+    public Algorithm getSignatureAlgorithm() {
+        return realm.getSignatureAlgorithm();
+    }
+
+    @Override
+    public void setSignatureAlgorithm(Algorithm algorithm) {
+        realm.setSignatureAlgorithm(algorithm);
+        em.flush();
     }
 
     @Override

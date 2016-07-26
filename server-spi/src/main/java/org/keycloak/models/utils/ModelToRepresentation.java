@@ -240,6 +240,7 @@ public class ModelToRepresentation {
             rep.setCodeSecret(realm.getCodeSecret());
         }
         rep.setCertificate(realm.getCertificatePem());
+        rep.setSignatureAlgorithm(realm.getSignatureAlgorithm());
         rep.setRegistrationAllowed(realm.isRegistrationAllowed());
         rep.setRegistrationEmailAsUsername(realm.isRegistrationEmailAsUsername());
         rep.setRememberMe(realm.isRememberMe());

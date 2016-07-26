@@ -14,35 +14,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.keycloak.jose.jws.crypto;
-
 
 import org.keycloak.jose.jws.Algorithm;
 import org.keycloak.jose.jws.JWSInput;
-import org.keycloak.common.util.PemUtils;
 
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.Signature;
-import java.security.cert.X509Certificate;
 
 /**
- * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
- * @version $Revision: 1 $
+ * @author <a href="mailto:thomas.darimont@gmail.com">Thomas Darimont</a>
  */
-public class RSAProvider implements SignatureProvider {
+public class EcdsaProvider implements SignatureProvider {
 
     static String getJavaAlgorithm(Algorithm alg) {
         switch (alg) {
-            case RS256:
-                return "SHA256withRSA";
-            case RS384:
-                return "SHA384withRSA";
-            case RS512:
-                return "SHA512withRSA";
+            case ES256:
+                return "SHA256withECDSA";
+            case ES384:
+                return "SHA384withECDSA";
+            case ES512:
+                return "SHA512withECDSA";
             default:
-                throw new IllegalArgumentException("Not an RSA Algorithm");
+                throw new IllegalArgumentException("Not an ECDSA Algorithm: " + alg);
         }
     }
 

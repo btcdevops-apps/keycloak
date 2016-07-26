@@ -17,6 +17,8 @@
 
 package org.keycloak.models.jpa.entities;
 
+import org.keycloak.jose.jws.Algorithm;
+
 import javax.persistence.Access;
 import javax.persistence.AccessType;
 import javax.persistence.CascadeType;
@@ -24,6 +26,8 @@ import javax.persistence.CollectionTable;
 import javax.persistence.Column;
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.FetchType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
@@ -125,6 +129,10 @@ public class RealmEntity {
     protected String certificatePem;
     @Column(name="CODE_SECRET", length = 255)
     protected String codeSecret;
+
+    @Column(name="SIGNATURE_ALGORITHM")
+    @Enumerated(EnumType.STRING)
+    protected Algorithm signatureAlgorithm;
 
     @Column(name="LOGIN_THEME")
     protected String loginTheme;
@@ -401,6 +409,22 @@ public class RealmEntity {
 
     public void setPrivateKeyPem(String privateKeyPem) {
         this.privateKeyPem = privateKeyPem;
+    }
+
+    public Algorithm getSignatureAlgorithm() {
+        return signatureAlgorithm;
+    }
+
+    public void setSignatureAlgorithm(Algorithm signatureAlgorithm) {
+        this.signatureAlgorithm = signatureAlgorithm;
+    }
+
+    public Collection<AuthenticatorConfigEntity> getAuthenticators() {
+        return authenticators;
+    }
+
+    public void setAuthenticators(Collection<AuthenticatorConfigEntity> authenticators) {
+        this.authenticators = authenticators;
     }
 
     public String getCodeSecret() {

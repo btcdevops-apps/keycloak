@@ -619,7 +619,7 @@ public class TokenManager {
                 .type(JWT)
                 .kid(realm.getKeyId())
                 .jsonContent(token)
-                .rsa256(realm.getPrivateKey());
+                .sign(realm.getSignatureAlgorithm(), realm.getPrivateKey());
         return encodedToken;
     }
 
@@ -730,11 +730,11 @@ public class TokenManager {
 
             AccessTokenResponse res = new AccessTokenResponse();
             if (idToken != null) {
-                String encodedToken = new JWSBuilder().type(JWT).kid(realm.getKeyId()).jsonContent(idToken).rsa256(realm.getPrivateKey());
+                String encodedToken = new JWSBuilder().type(JWT).kid(realm.getKeyId()).jsonContent(idToken).sign(realm.getSignatureAlgorithm(), realm.getPrivateKey());
                 res.setIdToken(encodedToken);
             }
             if (accessToken != null) {
-                String encodedToken = new JWSBuilder().type(JWT).kid(realm.getKeyId()).jsonContent(accessToken).rsa256(realm.getPrivateKey());
+                String encodedToken = new JWSBuilder().type(JWT).kid(realm.getKeyId()).jsonContent(accessToken).sign(realm.getSignatureAlgorithm(), realm.getPrivateKey());
                 res.setToken(encodedToken);
                 res.setTokenType("bearer");
                 res.setSessionState(accessToken.getSessionState());
@@ -743,7 +743,7 @@ public class TokenManager {
                 }
             }
             if (refreshToken != null) {
-                String encodedToken = new JWSBuilder().type(JWT).kid(realm.getKeyId()).jsonContent(refreshToken).rsa256(realm.getPrivateKey());
+                String encodedToken = new JWSBuilder().type(JWT).kid(realm.getKeyId()).jsonContent(refreshToken).sign(realm.getSignatureAlgorithm(), realm.getPrivateKey());
                 res.setRefreshToken(encodedToken);
                 if (refreshToken.getExpiration() != 0) {
                     res.setRefreshExpiresIn(refreshToken.getExpiration() - Time.currentTime());

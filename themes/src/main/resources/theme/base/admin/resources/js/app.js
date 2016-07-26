@@ -135,7 +135,9 @@ module.config([ '$routeProvider', function($routeProvider) {
         .when('/create/realm', {
             templateUrl : resourceUrl + '/partials/realm-create.html',
             resolve : {
-
+                serverInfo : function(ServerInfoLoader) {
+                    return ServerInfoLoader();
+                }
             },
             controller : 'RealmCreateCtrl'
         })

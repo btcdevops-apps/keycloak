@@ -18,6 +18,7 @@
 package org.keycloak.models;
 
 import org.keycloak.common.enums.SslRequired;
+import org.keycloak.jose.jws.Algorithm;
 import org.keycloak.provider.ProviderEvent;
 import org.keycloak.storage.StorageProviderModel;
 
@@ -171,6 +172,9 @@ public interface RealmModel extends RoleContainerModel {
     Key getCodeSecretKey();
 
     void setCodeSecret(String codeSecret);
+
+    Algorithm getSignatureAlgorithm();
+    void setSignatureAlgorithm(Algorithm algorithm);
 
     X509Certificate getCertificate();
     void setCertificate(X509Certificate certificate);

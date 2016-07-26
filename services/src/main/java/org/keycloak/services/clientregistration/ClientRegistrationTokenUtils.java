@@ -104,7 +104,7 @@ public class ClientRegistrationTokenUtils {
         jwt.issuer(issuer);
         jwt.audience(issuer);
 
-        String token = new JWSBuilder().jsonContent(jwt).rsa256(realm.getPrivateKey());
+        String token = new JWSBuilder().jsonContent(jwt).sign(realm.getSignatureAlgorithm(), realm.getPrivateKey());
         return token;
     }
 

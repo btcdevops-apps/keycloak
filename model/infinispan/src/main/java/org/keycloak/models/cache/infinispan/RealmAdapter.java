@@ -19,6 +19,7 @@ package org.keycloak.models.cache.infinispan;
 
 import org.keycloak.Config;
 import org.keycloak.common.enums.SslRequired;
+import org.keycloak.jose.jws.Algorithm;
 import org.keycloak.models.*;
 import org.keycloak.models.cache.CacheRealmProvider;
 import org.keycloak.models.cache.infinispan.entities.CachedRealm;
@@ -518,6 +519,18 @@ public class RealmAdapter implements RealmModel {
     public void setCodeSecret(String codeSecret) {
         getDelegateForUpdate();
         updated.setCodeSecret(codeSecret);
+    }
+
+    @Override
+    public Algorithm getSignatureAlgorithm() {
+        if (isUpdated()) return updated.getSignatureAlgorithm();
+        return cached.getSignatureAlgorithm();
+    }
+
+    @Override
+    public void setSignatureAlgorithm(Algorithm algorithm) {
+        getDelegateForUpdate();
+        updated.setSignatureAlgorithm(algorithm);
     }
 
     @Override

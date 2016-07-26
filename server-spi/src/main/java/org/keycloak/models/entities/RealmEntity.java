@@ -74,6 +74,7 @@ public class RealmEntity extends AbstractIdentifiableEntity {
     private String privateKeyPem;
     private String certificatePem;
     private String codeSecret;
+    private String signatureAlgorithm;
 
     private String loginTheme;
     private String accountTheme;
@@ -371,6 +372,14 @@ public class RealmEntity extends AbstractIdentifiableEntity {
 
     public void setCodeSecret(String codeSecret) {
         this.codeSecret = codeSecret;
+    }
+
+    public String getSignatureAlgorithm() {
+        return signatureAlgorithm;
+    }
+
+    public void setSignatureAlgorithm(String signatureAlgorithm) {
+        this.signatureAlgorithm = signatureAlgorithm;
     }
 
     public String getLoginTheme() {

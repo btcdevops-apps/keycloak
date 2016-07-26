@@ -24,12 +24,14 @@ import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.protection.permission.representation.PermissionRequest;
 import org.keycloak.authorization.protection.permission.representation.PermissionResponse;
 import org.keycloak.authorization.store.StoreFactory;
+import org.keycloak.jose.jws.Algorithm;
 import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 import org.keycloak.services.ErrorResponseException;
 
 import javax.ws.rs.core.Response;
+import java.security.PrivateKey;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -112,7 +114,11 @@ public class AbstractPermissionService {
     }
 
     private String createPermissionTicket(List<ResourceRepresentation> resources) {
+
+        Algorithm signatureAlgorithm = authorization.getKeycloakSession().getContext().getRealm().getSignatureAlgorithm();
+        PrivateKey privateKey = this.authorization.getKeycloakSession().getContext().getRealm().getPrivateKey();
+
         return new JWSBuilder().jsonContent(new PermissionTicket(resources, this.resourceServer.getId(), this.identity.getAccessToken()))
-                .rsa256(this.authorization.getKeycloakSession().getContext().getRealm().getPrivateKey());
+                .sign(signatureAlgorithm, privateKey);
     }
 }

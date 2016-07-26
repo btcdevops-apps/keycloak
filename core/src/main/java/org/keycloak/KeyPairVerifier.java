@@ -19,6 +19,7 @@ package org.keycloak;
 
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.PemUtils;
+import org.keycloak.jose.jws.Algorithm;
 import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.crypto.RSAProvider;
@@ -31,7 +32,7 @@ import java.security.PublicKey;
  */
 public class KeyPairVerifier {
 
-    public static void verify(String privateKeyPem, String publicKeyPem) throws VerificationException {
+    public static void verify(String privateKeyPem, String publicKeyPem, Algorithm signatureAlgorithm) throws VerificationException {
         PrivateKey privateKey;
         try {
             privateKey = PemUtils.decodePrivateKey(privateKeyPem);
@@ -47,13 +48,17 @@ public class KeyPairVerifier {
         }
 
         try {
-            String jws = new JWSBuilder().content("content".getBytes()).rsa256(privateKey);
+            String jws = new JWSBuilder().content("content".getBytes()).sign(signatureAlgorithm, privateKey);
             if (!RSAProvider.verify(new JWSInput(jws), publicKey)) {
                 throw new VerificationException("Keys don't match");
             }
         } catch (Exception e) {
             throw new VerificationException("Keys don't match");
         }
+    }
+
+    public static void verify(String privateKeyPem, String publicKeyPem) throws VerificationException {
+        verify(privateKeyPem,publicKeyPem, Algorithm.RS256);
     }
 
 }

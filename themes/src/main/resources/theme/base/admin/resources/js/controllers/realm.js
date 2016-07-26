@@ -150,13 +150,17 @@ module.controller('RealmDropdownCtrl', function($scope, Realm, Current, Auth, $l
     }
 });
 
-module.controller('RealmCreateCtrl', function($scope, Current, Realm, $upload, $http, $location, $route, Dialog, Notifications, Auth, $modal) {
+module.controller('RealmCreateCtrl', function($scope, Current, Realm, $upload, $http, $location, $route, Dialog, Notifications, Auth, $modal, ServerInfo) {
     console.log('RealmCreateCtrl');
 
     Current.realm = null;
 
+    ServerInfo.reload();
+    $scope.serverInfo = ServerInfo.get();
+
     $scope.realm = {
-        enabled: true
+        enabled: true,
+        signatureAlgorithm: 'RS256'
     };
 
     $scope.changed = false;

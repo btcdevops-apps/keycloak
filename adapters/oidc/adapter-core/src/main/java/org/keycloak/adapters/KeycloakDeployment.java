@@ -25,6 +25,7 @@ import org.keycloak.constants.ServiceUrlConstants;
 import org.keycloak.common.enums.RelativeUrlsUsed;
 import org.keycloak.common.enums.SslRequired;
 import org.keycloak.enums.TokenStore;
+import org.keycloak.jose.jws.Algorithm;
 import org.keycloak.representations.adapters.config.AdapterConfig;
 import org.keycloak.common.util.KeycloakUriBuilder;
 
@@ -80,6 +81,7 @@ public class KeycloakDeployment {
     protected volatile int notBefore;
     protected int tokenMinimumTimeToLive;
     private PolicyEnforcer policyEnforcer;
+    private Algorithm signatureAlgorithm = Algorithm.RS256;
 
     public KeycloakDeployment() {
     }
@@ -375,5 +377,13 @@ public class KeycloakDeployment {
 
     public PolicyEnforcer getPolicyEnforcer() {
         return policyEnforcer;
+    }
+
+    public Algorithm getSignatureAlgorithm() {
+        return signatureAlgorithm;
+    }
+
+    public void setSignatureAlgorithm(Algorithm signatureAlgorithm) {
+        this.signatureAlgorithm = signatureAlgorithm;
     }
 }
