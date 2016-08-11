@@ -53,6 +53,8 @@ public class Messages {
 
     public static final String INVALID_TOTP = "invalidTotpMessage";
 
+    public static final String INVALID_TOTP_CODE_ALREADY_USED = "invalidOtpCodeAlreadyUsedMessage";
+
     public static final String USERNAME_EXISTS = "usernameExistsMessage";
     public static final String RECAPTCHA_FAILED = "recaptchaFailed";
     public static final String RECAPTCHA_NOT_CONFIGURED = "recaptchaNotConfigured";
