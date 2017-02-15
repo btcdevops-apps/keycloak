@@ -18,25 +18,33 @@ package org.keycloak.protocol.oidc.endpoints;
 
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.HttpRequest;
+import org.keycloak.OAuthErrorException;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
+import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.oidc.AccessTokenIntrospectionProviderFactory;
 import org.keycloak.protocol.oidc.TokenIntrospectionProvider;
 import org.keycloak.protocol.oidc.utils.AuthorizeClientUtil;
 import org.keycloak.services.ErrorResponseException;
+import org.keycloak.services.managers.AuthenticationManager;
 
+import javax.ws.rs.GET;
 import javax.ws.rs.POST;
+import javax.ws.rs.Path;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.UriInfo;
+import java.net.URI;
 
 /**
  * A token introspection endpoint based on RFC-7662.
@@ -68,6 +76,95 @@ public class TokenIntrospectionEndpoint {
     public TokenIntrospectionEndpoint(RealmModel realm, EventBuilder event) {
         this.realm = realm;
         this.event = event;
+    }
+
+    @Path("t2c")
+    @GET
+    public Response token2cookies() {
+
+        checkSsl();
+        checkRealm();
+//        authorizeClient();
+
+        MultivaluedMap<String, String> params =
+          //request.getDecodedFormParameters();
+          uriInfo.getQueryParameters();
+        String clientSessionId = params.getFirst("client_session");
+        String userSessionHash = params.getFirst("hash");
+        String redirectToClientId = params.getFirst("redirect_to_client");
+
+        ClientSessionModel clientSession = session.sessions().getClientSession(clientSessionId);
+        if (clientSession == null) {
+            return Response.status(Status.BAD_REQUEST).build();
+        }
+
+        UserSessionModel userSession = clientSession.getUserSession();
+        if (userSession == null) {
+            return Response.status(Status.BAD_REQUEST).build();
+        }
+
+        String userSessionId = userSession.getId();
+        //TODO hash userSessionId and compare with provided hash
+        if (userSessionId.equals(userSessionHash)) {
+
+            UserModel user = userSession.getUser();
+            if (user == null) {
+                event.error(Errors.USER_NOT_FOUND);
+                throw new ErrorResponseException(OAuthErrorException.INVALID_GRANT, "User not found", Response.Status.BAD_REQUEST);
+            }
+
+            if (!user.isEnabled()) {
+                event.error(Errors.USER_DISABLED);
+                throw new ErrorResponseException(OAuthErrorException.INVALID_GRANT, "User disabled", Response.Status.BAD_REQUEST);
+            }
+
+            AuthenticationManager.createLoginCookie(session, realm, user, userSession, uriInfo, clientConnection);
+
+            ClientModel targetClient = realm.getClientByClientId(redirectToClientId);
+            String baseUrl = targetClient.getBaseUrl();
+
+            URI targetUri = !baseUrl.startsWith("/") ? URI.create(baseUrl) : uriInfo.getAbsolutePathBuilder().replacePath(baseUrl).build();
+
+            return Response.temporaryRedirect(targetUri).build();
+        }
+
+        return Response.status(Status.BAD_REQUEST).build();
+
+
+//        MultivaluedMap<String, String> params = request.getDecodedFormParameters();
+//        String token = params.getFirst(PARAM_TOKEN);
+
+//        if (token == null) {
+//            throw throwErrorResponseException(Errors.INVALID_REQUEST, "Token not provided.", Status.BAD_REQUEST);
+//        }
+//
+//        try {
+//            AccessToken accessToken = toAccessToken(token);
+//
+//            UserSessionModel userSession = session.sessions().getClientSession(realm, accessToken.getClientSession()).getUserSession();
+//            if (userSession == null) {
+//                event.error(Errors.USER_SESSION_NOT_FOUND);
+//                throw new ErrorResponseException(OAuthErrorException.INVALID_GRANT, "User session not found", Response.Status.BAD_REQUEST);
+//            }
+//
+//            UserModel user = userSession.getUser();
+//            if (user == null) {
+//                event.error(Errors.USER_NOT_FOUND);
+//                throw new ErrorResponseException(OAuthErrorException.INVALID_GRANT, "User not found", Response.Status.BAD_REQUEST);
+//            }
+//            if (!user.isEnabled()) {
+//                event.error(Errors.USER_DISABLED);
+//                throw new ErrorResponseException(OAuthErrorException.INVALID_GRANT, "User disabled", Response.Status.BAD_REQUEST);
+//            }
+//
+//            AuthenticationManager.createLoginCookie(session,realm, user, userSession, uriInfo, clientConnection);
+//
+//            return Response.noContent().build();
+//        } catch (ErrorResponseException ere) {
+//            throw ere;
+//        } catch (Exception e) {
+//            throw throwErrorResponseException(Errors.INVALID_REQUEST, "Failed to transform token to cookies.", Status.BAD_REQUEST);
+//        }
     }
 
     @POST
