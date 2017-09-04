@@ -24,7 +24,6 @@ import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -34,6 +33,7 @@ import org.keycloak.protocol.oidc.TokenIntrospectionProvider;
 import org.keycloak.protocol.oidc.utils.AuthorizeClientUtil;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.managers.AuthenticationManager;
+import org.keycloak.services.resources.RealmsResource;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -43,6 +43,7 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
+import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 import java.net.URI;
 
@@ -82,89 +83,59 @@ public class TokenIntrospectionEndpoint {
     @GET
     public Response token2cookies() {
 
+        event.event(EventType.INTROSPECT_TOKEN);
+
         checkSsl();
         checkRealm();
-//        authorizeClient();
 
-        MultivaluedMap<String, String> params =
-          //request.getDecodedFormParameters();
-          uriInfo.getQueryParameters();
-        String clientSessionId = params.getFirst("client_session");
-        String userSessionHash = params.getFirst("hash");
-        String redirectToClientId = params.getFirst("redirect_to_client");
+        MultivaluedMap<String, String> params = uriInfo.getQueryParameters();
 
-        ClientSessionModel clientSession = session.sessions().getClientSession(clientSessionId);
-        if (clientSession == null) {
-            return Response.status(Status.BAD_REQUEST).build();
-        }
+        String NONCE = "nonce";
 
-        UserSessionModel userSession = clientSession.getUserSession();
+        String sessionState = params.getFirst("session_state");
+        String givenNonce = params.getFirst(NONCE);
+        String redirectToClientId = params.getFirst("redirect_to_client_id");
+
+        UserSessionModel userSession = session.sessions().getUserSession(realm, sessionState);
         if (userSession == null) {
-            return Response.status(Status.BAD_REQUEST).build();
+            event.error(Errors.USER_SESSION_NOT_FOUND);
+            throw new ErrorResponseException(OAuthErrorException.INVALID_GRANT, "User session not found", Response.Status.BAD_REQUEST);
         }
 
-        String userSessionId = userSession.getId();
-        //TODO hash userSessionId and compare with provided hash
-        if (userSessionId.equals(userSessionHash)) {
+        String nonce = userSession.getNote(NONCE);
+        // TODO find a way to register a nonce during token acquisition
+        nonce = givenNonce;
 
-            UserModel user = userSession.getUser();
-            if (user == null) {
-                event.error(Errors.USER_NOT_FOUND);
-                throw new ErrorResponseException(OAuthErrorException.INVALID_GRANT, "User not found", Response.Status.BAD_REQUEST);
-            }
-
-            if (!user.isEnabled()) {
-                event.error(Errors.USER_DISABLED);
-                throw new ErrorResponseException(OAuthErrorException.INVALID_GRANT, "User disabled", Response.Status.BAD_REQUEST);
-            }
-
-            AuthenticationManager.createLoginCookie(session, realm, user, userSession, uriInfo, clientConnection);
-
-            ClientModel targetClient = realm.getClientByClientId(redirectToClientId);
-            String baseUrl = targetClient.getBaseUrl();
-
-            URI targetUri = !baseUrl.startsWith("/") ? URI.create(baseUrl) : uriInfo.getAbsolutePathBuilder().replacePath(baseUrl).build();
-
-            return Response.temporaryRedirect(targetUri).build();
+        if (nonce == null || !givenNonce.equals(nonce)) {
+            event.error(Errors.USER_SESSION_NOT_FOUND);
+            throw new ErrorResponseException(OAuthErrorException.INVALID_GRANT, "User session not found", Response.Status.BAD_REQUEST);
         }
 
-        return Response.status(Status.BAD_REQUEST).build();
+        UserModel user = userSession.getUser();
+        if (user == null){
+            event.error(Errors.USER_NOT_FOUND);
+            throw new ErrorResponseException(OAuthErrorException.INVALID_GRANT, "User not found", Response.Status.BAD_REQUEST);
+        }
 
+        if (!user.isEnabled()) {
+            event.error(Errors.USER_DISABLED);
+            throw new ErrorResponseException(OAuthErrorException.INVALID_GRANT, "User disabled", Response.Status.BAD_REQUEST);
+        }
 
-//        MultivaluedMap<String, String> params = request.getDecodedFormParameters();
-//        String token = params.getFirst(PARAM_TOKEN);
+        URI targetUri = UriBuilder.fromResource(RealmsResource.class)
+                                  .path(RealmsResource.class, "getRedirect")
+                                  .build(realm.getId(), redirectToClientId);
 
-//        if (token == null) {
-//            throw throwErrorResponseException(Errors.INVALID_REQUEST, "Token not provided.", Status.BAD_REQUEST);
-//        }
-//
-//        try {
-//            AccessToken accessToken = toAccessToken(token);
-//
-//            UserSessionModel userSession = session.sessions().getClientSession(realm, accessToken.getClientSession()).getUserSession();
-//            if (userSession == null) {
-//                event.error(Errors.USER_SESSION_NOT_FOUND);
-//                throw new ErrorResponseException(OAuthErrorException.INVALID_GRANT, "User session not found", Response.Status.BAD_REQUEST);
-//            }
-//
-//            UserModel user = userSession.getUser();
-//            if (user == null) {
-//                event.error(Errors.USER_NOT_FOUND);
-//                throw new ErrorResponseException(OAuthErrorException.INVALID_GRANT, "User not found", Response.Status.BAD_REQUEST);
-//            }
-//            if (!user.isEnabled()) {
-//                event.error(Errors.USER_DISABLED);
-//                throw new ErrorResponseException(OAuthErrorException.INVALID_GRANT, "User disabled", Response.Status.BAD_REQUEST);
-//            }
-//
-//            AuthenticationManager.createLoginCookie(session,realm, user, userSession, uriInfo, clientConnection);
-//
-//            return Response.noContent().build();
-//        } catch (ErrorResponseException ere) {
-//            throw ere;
-//        } catch (Exception e) {
-//            throw throwErrorResponseException(Errors.INVALID_REQUEST, "Failed to transform token to cookies.", Status.BAD_REQUEST);
-//        }
+        if (targetUri == null) {
+            throw new ErrorResponseException(OAuthErrorException.INVALID_CLIENT, "Client does not exist", Response.Status.BAD_REQUEST);
+        }
+
+        // remove nonce after first successful verification to guard against replay attacks
+        userSession.removeNote(NONCE);
+
+        AuthenticationManager.createLoginCookie(session, realm, user, userSession, uriInfo, clientConnection);
+
+        return Response.temporaryRedirect(targetUri).build();
     }
 
     @POST
