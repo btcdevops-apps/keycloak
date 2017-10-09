@@ -198,22 +198,6 @@
                     </compilerArgument>
                 </configuration>
             </plugin>
-
-            <plugin>
-                <groupId>org.owasp</groupId>
-                <artifactId>dependency-check-maven</artifactId>
-                <configuration>
-                    <cveValidForHours>12</cveValidForHours>
-                    <failBuildOnCVSS>4</failBuildOnCVSS>
-                </configuration>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>check</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
         </plugins>
     </build>
 
@@ -349,6 +333,34 @@
                                         <generated>${project.basedir}/target/apidocs-rest/asciidoc</generated>
                                     </attributes>
                                 </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+         <profile>
+            <id>owasp-dependency-check</id>
+            <activation>
+                <property>
+                    <name>owasp-dependency-check</name>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.owasp</groupId>
+                        <artifactId>dependency-check-maven</artifactId>
+                        <configuration>
+                            <cveValidForHours>12</cveValidForHours>
+                            <failBuildOnCVSS>4</failBuildOnCVSS>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <goals>
+                                    <goal>check</goal>
+                                </goals>
                             </execution>
                         </executions>
                     </plugin>
