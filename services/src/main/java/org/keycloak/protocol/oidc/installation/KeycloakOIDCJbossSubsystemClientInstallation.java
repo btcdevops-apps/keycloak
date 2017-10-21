@@ -18,61 +18,67 @@
 package org.keycloak.protocol.oidc.installation;
 
 import org.keycloak.Config;
-import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.ClientInstallationProvider;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.services.managers.ClientManager;
 
 import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import java.net.URI;
 import java.util.Map;
 
 /**
+ * Generates a Keycloak Client configuration for the Wildfly Subsystem.
+ *
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class KeycloakOIDCJbossSubsystemClientInstallation implements ClientInstallationProvider {
-    @Override
-    public Response generateInstallation(KeycloakSession session, RealmModel realm, ClientModel client, URI baseUri) {
-        StringBuffer buffer = new StringBuffer();
-        buffer.append("<secure-deployment name=\"WAR MODULE NAME.war\">\n");
-        buffer.append("    <realm>").append(realm.getName()).append("</realm>\n");
-        buffer.append("    <auth-server-url>").append(baseUri.toString()).append("</auth-server-url>\n");
-        if (client.isBearerOnly()){
-            buffer.append("    <bearer-only>true</bearer-only>\n");
+public class KeycloakOIDCJbossSubsystemClientInstallation extends KeycloakOIDCClientInstallation {
 
-        } else if (client.isPublicClient()) {
-            buffer.append("    <public-client>true</public-client>\n");
+    @Override
+    protected String generateAdapterInstallationText(ClientManager.InstallationAdapterConfig adapterConfig) {
+
+        StringBuilder subsystemXml = new StringBuilder();
+
+        subsystemXml.append("<secure-deployment name=\"WAR MODULE NAME.war\">\n");
+        subsystemXml.append("    <realm>").append(adapterConfig.getRealm()).append("</realm>\n");
+        subsystemXml.append("    <auth-server-url>").append(adapterConfig.getAuthServerUrl()).append("</auth-server-url>\n");
+
+        if (adapterConfig.getBearerOnly() != null && adapterConfig.getBearerOnly()){
+            subsystemXml.append("    <bearer-only>true</bearer-only>\n");
+
+        } else if (adapterConfig.getPublicClient() != null && adapterConfig.getPublicClient()) {
+            subsystemXml.append("    <public-client>true</public-client>\n");
         }
-        buffer.append("    <ssl-required>").append(realm.getSslRequired().name()).append("</ssl-required>\n");
-        buffer.append("    <resource>").append(client.getClientId()).append("</resource>\n");
-        String cred = client.getSecret();
-        if (KeycloakOIDCClientInstallation.showClientCredentialsAdapterConfig(client)) {
-            Map<String, Object> adapterConfig = KeycloakOIDCClientInstallation.getClientCredentialsAdapterConfig(session, client);
-            for (Map.Entry<String, Object> entry : adapterConfig.entrySet()) {
-                buffer.append("    <credential name=\"" + entry.getKey() + "\">");
+
+        subsystemXml.append("    <ssl-required>").append(adapterConfig.getSslRequired()).append("</ssl-required>\n");
+        subsystemXml.append("    <resource>").append(adapterConfig.getResource()).append("</resource>\n");
+
+        if (adapterConfig.getCredentials() != null && adapterConfig.getCredentials().isEmpty()){
+            for (Map.Entry<String, Object> entry : adapterConfig.getCredentials().entrySet()) {
+                subsystemXml.append("    <credential name=\"" + entry.getKey() + "\">");
 
                 Object value = entry.getValue();
                 if (value instanceof Map) {
-                    buffer.append("\n");
+                    subsystemXml.append("\n");
                     Map<String, Object> asMap = (Map<String, Object>) value;
                     for (Map.Entry<String, Object> credEntry : asMap.entrySet()) {
-                        buffer.append("        <" + credEntry.getKey() + ">" + credEntry.getValue().toString() + "</" + credEntry.getKey() + ">\n");
+                        subsystemXml.append("        <" + credEntry.getKey() + ">" + credEntry.getValue().toString() + "</" + credEntry.getKey() + ">\n");
                     }
-                    buffer.append("    </credential>\n");
+                    subsystemXml.append("    </credential>\n");
                 } else {
-                    buffer.append(value.toString()).append("</credential>\n");
+                    subsystemXml.append(value.toString()).append("</credential>\n");
                 }
             }
         }
-        if (client.getRoles().size() > 0) {
-            buffer.append("    <use-resource-role-mappings>true</use-resource-role-mappings>\n");
+
+        if (adapterConfig.isUseResourceRoleMappings() != null && adapterConfig.isUseResourceRoleMappings()){
+            subsystemXml.append("    <use-resource-role-mappings>true</use-resource-role-mappings>\n");
         }
-        buffer.append("</secure-deployment>\n");
-        return Response.ok(buffer.toString(), MediaType.TEXT_PLAIN_TYPE).build();
+
+        subsystemXml.append("</secure-deployment>\n");
+
+        return subsystemXml.toString();
     }
 
     @Override

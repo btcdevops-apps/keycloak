@@ -30,7 +30,7 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.protocol.ClientInstallationProvider;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.adapters.config.PolicyEnforcerConfig;
-import org.keycloak.services.managers.ClientManager;
+import org.keycloak.services.managers.ClientManager.InstallationAdapterConfig;
 import org.keycloak.util.JsonSerialization;
 
 import javax.ws.rs.core.MediaType;
@@ -48,14 +48,20 @@ public class KeycloakOIDCClientInstallation implements ClientInstallationProvide
 
     @Override
     public Response generateInstallation(KeycloakSession session, RealmModel realm, ClientModel client, URI baseUri) {
-        ClientManager.InstallationAdapterConfig rep = new ClientManager.InstallationAdapterConfig();
+        InstallationAdapterConfig rep = new InstallationAdapterConfig();
         rep.setAuthServerUrl(baseUri.toString());
         rep.setRealm(realm.getName());
         rep.setSslRequired(realm.getSslRequired().name().toLowerCase());
 
-        if (client.isPublicClient() && !client.isBearerOnly()) rep.setPublicClient(true);
-        if (client.isBearerOnly()) rep.setBearerOnly(true);
-        if (client.getRoles().size() > 0) rep.setUseResourceRoleMappings(true);
+        if (client.isPublicClient() && !client.isBearerOnly()){
+            rep.setPublicClient(true);
+        }
+        if (client.isBearerOnly()){
+            rep.setBearerOnly(true);
+        }
+        if (client.getRoles().size() > 0) {
+            rep.setUseResourceRoleMappings(true);
+        }
 
         rep.setResource(client.getClientId());
 
@@ -66,23 +72,32 @@ public class KeycloakOIDCClientInstallation implements ClientInstallationProvide
 
         configureAuthorizationSettings(session, client, rep);
 
-        String json = null;
+        String configText = generateAdapterInstallationText(rep);
+        return Response.ok(configText, MediaType.TEXT_PLAIN_TYPE).build();
+    }
+
+    /**
+     * Generate adapter specific client configuration.
+     * Intended to be overridden by sub-classes.
+     * @param adapterConfig
+     * @return
+     */
+    protected String generateAdapterInstallationText(InstallationAdapterConfig adapterConfig) {
         try {
-            json = JsonSerialization.writeValueAsPrettyString(rep);
+            return JsonSerialization.writeValueAsPrettyString(adapterConfig);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        return Response.ok(json, MediaType.TEXT_PLAIN_TYPE).build();
     }
 
-    public static Map<String, Object> getClientCredentialsAdapterConfig(KeycloakSession session, ClientModel client) {
+    public Map<String, Object> getClientCredentialsAdapterConfig(KeycloakSession session, ClientModel client) {
         String clientAuthenticator = client.getClientAuthenticatorType();
         ClientAuthenticatorFactory authenticator = (ClientAuthenticatorFactory) session.getKeycloakSessionFactory().getProviderFactory(ClientAuthenticator.class, clientAuthenticator);
         return authenticator.getAdapterConfiguration(client);
     }
 
 
-    public static boolean showClientCredentialsAdapterConfig(ClientModel client) {
+    public boolean showClientCredentialsAdapterConfig(ClientModel client) {
         if (client.isPublicClient()) {
             return false;
         }
@@ -150,7 +165,7 @@ public class KeycloakOIDCClientInstallation implements ClientInstallationProvide
         return MediaType.APPLICATION_JSON;
     }
 
-    private void configureAuthorizationSettings(KeycloakSession session, ClientModel client, ClientManager.InstallationAdapterConfig rep) {
+    private void configureAuthorizationSettings(KeycloakSession session, ClientModel client, InstallationAdapterConfig rep) {
         if (new AuthorizationService(session, client, null, null).isEnabled()) {
             PolicyEnforcerConfig enforcerConfig = new PolicyEnforcerConfig();
 
