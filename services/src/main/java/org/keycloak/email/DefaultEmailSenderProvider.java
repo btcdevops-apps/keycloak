@@ -67,6 +67,11 @@ public class DefaultEmailSenderProvider implements EmailSenderProvider {
                 props.setProperty("mail.smtp.host", config.get("host"));
             }
 
+            String localhost = determineLocalSmtpHostname(config.get("smtpLocalhost"));
+            if (localhost != null) {
+                props.setProperty("mail.smtp.localhost", localhost);
+            }
+
             boolean auth = "true".equals(config.get("auth"));
             boolean ssl = "true".equals(config.get("ssl"));
             boolean starttls = "true".equals(config.get("starttls"));
@@ -152,6 +157,33 @@ public class DefaultEmailSenderProvider implements EmailSenderProvider {
                 }
             }
         }
+    }
+
+    /**
+     * Returns the local host name to use for SMTP EHLO commands.
+     * If the given {@literal localhostCandidate} is {@literal null} or empty then {@literal null} is returned.
+     * If the given {@literal localhostCandidate} is {@code @requestHostname} then the hostname of the current request is returned,
+     * else the @literal localhostCandidate} is returned as is.
+     *
+     * @param localhostCandidate
+     * @return the smtp local host name or {@literal null} if no hostname should be used
+     */
+    protected String determineLocalSmtpHostname(String localhostCandidate) {
+
+        if (localhostCandidate == null) {
+            return null;
+        }
+
+        String localhost = localhostCandidate.trim();
+        if (localhost.isEmpty()) {
+            return null;
+        }
+
+        if ("@requestHostname".equals(localhost)) {
+            return session.getContext().getAuthServerUrl().getHost();
+        }
+
+        return localhost;
     }
 
     protected InternetAddress toInternetAddress(String email, String displayName) throws UnsupportedEncodingException, AddressException, EmailException {

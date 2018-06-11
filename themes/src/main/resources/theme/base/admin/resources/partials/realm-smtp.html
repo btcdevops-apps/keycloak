@@ -18,6 +18,13 @@
             </div>
         </div>
         <div class="form-group clearfix">
+            <label class="col-md-2 control-label" for="smtpLocalhost">{{:: 'smtpLocalhost' | translate}}</label>
+            <div class="col-md-6">
+                <input class="form-control" id="smtpLocalhost" type="text" ng-model="realm.smtpServer.smtpLocalhost" placeholder="{{:: 'smtp-localhost' | translate}}">
+            </div>
+            <kc-tooltip>{{:: 'smtpLocalhost.tooltip' | translate}}</kc-tooltip>
+        </div>
+        <div class="form-group clearfix">
             <label class="col-md-2 control-label" for="smtpFromDisplayName">{{:: 'fromDisplayName' | translate}}</label>
             <div class="col-md-6">
                 <input class="form-control" id="smtpFromDisplayName" type="text" ng-model="realm.smtpServer.fromDisplayName" placeholder="{{:: 'sender-email-addr-display' | translate}}">
