@@ -25,6 +25,7 @@ import org.keycloak.models.ModelException;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.policy.BlacklistPasswordPolicyProvider;
+import org.keycloak.policy.HaveIBeenPwnedPasswordPolicyProvider;
 import org.keycloak.policy.PasswordPolicyManagerProvider;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
@@ -159,6 +160,26 @@ public class PasswordPolicyTest extends AbstractKeycloakTest {
             assertNull(policyManager.validate("jdoe", "notblacklisted"));
         });
     }
+
+    /**
+     * KEYCLOAK-XXX
+     */
+    @Test
+    public void testHaveIbeenPwnedPasswordPolicy() {
+
+        testingClient.server("passwordPolicy").run(session -> {
+
+            RealmModel realmModel = session.getContext().getRealm();
+            PasswordPolicyManagerProvider policyManager = session.getProvider(PasswordPolicyManagerProvider.class);
+
+            realmModel.setPasswordPolicy(PasswordPolicy.parse(session, "haveIBeenPwned(1)"));
+
+            Assert.assertEquals(HaveIBeenPwnedPasswordPolicyProvider.ERROR_MESSAGE, policyManager.validate("jdoe", "test").getMessage());
+            Assert.assertEquals(HaveIBeenPwnedPasswordPolicyProvider.ERROR_MESSAGE, policyManager.validate("jdoe", "password").getMessage());
+            assertNull(policyManager.validate("jdoe", "keycluk ull thua things!"));
+        });
+    }
+
 
     @Test
     public void testNotUsername() {
