@@ -93,9 +93,8 @@ public class LiquibaseJpaUpdaterProvider implements JpaUpdaterProvider {
         ThreadLocalSessionContext.setCurrentSession(session);
 
         Writer exportWriter = null;
-        try {
-            // Run update with keycloak master changelog first
-            Liquibase liquibase = getLiquibaseForKeycloakUpdate(connection, defaultSchema);
+        // Run update with keycloak master changelog first
+        try (Liquibase liquibase = getLiquibaseForKeycloakUpdate(connection, defaultSchema)){
             if (file != null) {
                 exportWriter = new FileWriter(file);
             }
@@ -108,11 +107,12 @@ public class LiquibaseJpaUpdaterProvider implements JpaUpdaterProvider {
                 if (customChangelog != null) {
                     String factoryId = jpaProvider.getFactoryId();
                     String changelogTableName = JpaUtils.getCustomChangelogTableName(factoryId);
-                    liquibase = getLiquibaseForCustomProviderUpdate(connection, defaultSchema, customChangelog, jpaProvider.getClass().getClassLoader(), changelogTableName);
-                    updateChangeSet(liquibase, connection, exportWriter);
+                    try (Liquibase customLiquibase = getLiquibaseForCustomProviderUpdate(connection, defaultSchema, customChangelog, jpaProvider.getClass().getClassLoader(), changelogTableName)){
+                        updateChangeSet(customLiquibase, connection, exportWriter);
+                    }
                 }
             }
-        } catch (LiquibaseException | IOException | SQLException e) {
+        } catch (Exception e) {
             throw new RuntimeException("Failed to update database", e);
         } finally {
             ThreadLocalSessionContext.removeCurrentSession();
