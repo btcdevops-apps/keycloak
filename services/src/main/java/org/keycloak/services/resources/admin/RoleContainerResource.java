@@ -18,7 +18,6 @@
 package org.keycloak.services.resources.admin;
 
 import org.jboss.resteasy.annotations.cache.NoCache;
-import javax.ws.rs.NotFoundException;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.ClientModel;
@@ -30,7 +29,6 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RoleUtils;
 import org.keycloak.representations.idm.GroupRepresentation;
@@ -47,6 +45,7 @@ import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
+import javax.ws.rs.NotFoundException;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
@@ -57,6 +56,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -65,9 +65,9 @@ import java.util.function.Function;
 import java.util.stream.Stream;
 
 /**
- * @resource Roles
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
+ * @resource Roles
  */
 public class RoleContainerResource extends RoleResource {
     private final RealmModel realm;
@@ -105,7 +105,7 @@ public class RoleContainerResource extends RoleResource {
 
         Stream<RoleModel> roleModels;
 
-        if(search != null && search.trim().length() > 0) {
+        if (search != null && search.trim().length() > 0) {
             roleModels = roleContainer.searchForRolesStream(search, firstResult, maxResults);
         } else if (!Objects.isNull(firstResult) && !Objects.isNull(maxResults)) {
             roleModels = roleContainer.getRolesStream(firstResult, maxResults);
@@ -152,10 +152,16 @@ public class RoleContainerResource extends RoleResource {
 
                 Set<String> compositeRealmRoles = composites.getRealm();
                 if (compositeRealmRoles != null && !compositeRealmRoles.isEmpty()) {
-                    Set<RoleModel> realmRoles = compositeRealmRoles.stream()
-                            .map(realm::getRole)
-                            .filter(Objects::nonNull)
-                            .collect(Collectors.toSet());
+
+                    Set<RoleModel> realmRoles = new LinkedHashSet<>();
+                    for (String roleName : compositeRealmRoles) {
+                        RoleModel realmRole = realm.getRole(roleName);
+                        if (realmRole == null) {
+                            return ErrorResponse.error("Realm Role with name " + roleName + " does not exist", Response.Status.NOT_FOUND);
+                        }
+                        realmRoles.add(realmRole);
+                    }
+
                     RoleUtils.expandCompositeRoles(realmRoles).forEach(role::addCompositeRole);
                 }
 
@@ -169,10 +175,16 @@ public class RoleContainerResource extends RoleResource {
                         if (client == null) {
                             continue;
                         }
-                        Set<RoleModel> clientRoles = clientRoleNames.stream()
-                                .map(client::getRole)
-                                .filter(Objects::nonNull)
-                                .collect(Collectors.toSet());
+
+                        Set<RoleModel> clientRoles = new LinkedHashSet<>();
+                        for (String roleName : clientRoleNames) {
+                            RoleModel clientRole = client.getRole(roleName);
+                            if (clientRole == null) {
+                                return ErrorResponse.error("Client Role with name " + roleName + " does not exist", Response.Status.NOT_FOUND);
+                            }
+                            clientRoles.add(clientRole);
+                        }
+
                         RoleUtils.expandCompositeRoles(clientRoles).forEach(role::addCompositeRole);
                     }
                 }
@@ -373,7 +385,6 @@ public class RoleContainerResource extends RoleResource {
     /**
      * Return object stating whether role Authoirzation permissions have been initialized or not and a reference
      *
-     *
      * @param roleName
      * @return
      */
@@ -397,7 +408,6 @@ public class RoleContainerResource extends RoleResource {
 
     /**
      * Return object stating whether role Authoirzation permissions have been initialized or not and a reference
-     *
      *
      * @param roleName
      * @return initialized manage permissions reference
@@ -425,7 +435,6 @@ public class RoleContainerResource extends RoleResource {
 
     /**
      * Return List of Users that have the specified role name 
-     *
      *
      * @param roleName
      * @param firstResult
@@ -458,11 +467,10 @@ public class RoleContainerResource extends RoleResource {
         }
         return results; 
         
-    }    
-    
+    }  
+
     /**
      * Return List of Groups that have the specified role name 
-     *
      *
      * @param roleName
      * @param firstResult
@@ -492,5 +500,5 @@ public class RoleContainerResource extends RoleResource {
         Stream<GroupModel> groupsModel = session.groups().getGroupsByRoleStream(realm, role, firstResult, maxResults);
 
         return groupsModel.map(g -> ModelToRepresentation.toRepresentation(g, !briefRepresentation));
-    }   
+    }
 }
